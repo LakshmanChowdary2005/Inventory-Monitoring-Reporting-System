@@ -1,0 +1,74 @@
+package com.example.inventory.controller;
+
+import com.example.inventory.entity.Product;
+import com.example.inventory.repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+public class ProductController {
+
+@Autowired
+private ProductRepository repo;
+
+// 🔹 DASHBOARD PAGE (CRUD)
+@GetMapping("/dashboard")
+public String dashboard(Model model){
+
+var products = repo.findAll();
+
+model.addAttribute("products", products);
+model.addAttribute("totalProducts", products.size());
+model.addAttribute("lowStock",
+products.stream().filter(p -> p.getQuantity() < 3).count());
+model.addAttribute("totalValue",
+products.stream().mapToDouble(p -> p.getPrice()).sum());
+
+return "dashboard";
+}
+
+// 🔹 PRODUCTS PAGE (VIEW ONLY)
+@GetMapping("/products")
+public String products(Model model){
+
+model.addAttribute("products", repo.findAll());
+
+return "products"; // VERY IMPORTANT
+}
+
+// 🔹 ADD PRODUCT
+@PostMapping("/add-product")
+public String add(Product p){
+repo.save(p);
+return "redirect:/dashboard";
+}
+
+// 🔹 INCREASE
+@GetMapping("/increase/{id}")
+public String increase(@PathVariable Long id){
+Product p = repo.findById(id).orElseThrow();
+p.setQuantity(p.getQuantity()+1);
+repo.save(p);
+return "redirect:/dashboard";
+}
+
+// 🔹 DECREASE
+@GetMapping("/decrease/{id}")
+public String decrease(@PathVariable Long id){
+Product p = repo.findById(id).orElseThrow();
+if(p.getQuantity()>0){
+p.setQuantity(p.getQuantity()-1);
+repo.save(p);
+}
+return "redirect:/dashboard";
+}
+
+// 🔹 DELETE
+@GetMapping("/delete/{id}")
+public String delete(@PathVariable Long id){
+repo.deleteById(id);
+return "redirect:/dashboard";
+}
+}
